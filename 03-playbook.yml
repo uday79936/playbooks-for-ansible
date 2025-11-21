@@ -1,0 +1,8 @@
+- name: Update all servers
+  hosts: all
+
+  tasks:
+    - name: Ensure file hi.txt is created, with message
+      copy:
+        dest: /home/ubuntu/hi.txt
+        content: "Welcome to Devops"

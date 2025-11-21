@@ -1,0 +1,17 @@
+- name: Update all servers
+  hosts: all
+  tasks:
+    - name: Ensure apache2 is installed
+      package:
+        name: apache2
+        state: present
+
+    - name: Ensure apache2 is started
+      service:
+        name: apache2
+        state: started
+
+    - name: Ensure apache2 is enabled
+      service:
+        name: apache2
+        enabled: true
