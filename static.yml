@@ -1,0 +1,17 @@
+---
+- name: Update all servers
+  hosts: all
+  become: yes  # likely needed to write to /var/www/html/
+
+  tasks:
+    - name: Copy CentOS-specific HTML file
+      copy:
+        src: /home/ubuntu/centos.html
+        dest: /var/www/html/centos.html
+      when: ansible_distribution == "CentOS"
+
+    - name: Copy Ubuntu-specific HTML file
+      copy:
+        src: /home/ubuntu/ubuntu.html
+        dest: /var/www/html/ubuntu.html
+      when: ansible_distribution == "Ubuntu"
