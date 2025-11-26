@@ -1,0 +1,29 @@
+---
+- name: Install nexus
+  hosts: A1
+
+
+  tasks:
+  - name: Ensure nexus is installed
+    get_url:
+      dest: /home/ubuntu/nexus-3.86.2-01-linux-x86_64.tar.gz
+      url:  https://download.sonatype.com/nexus/3/nexus-3.86.2-01-linux-x86_64.tar.gz
+
+
+  - name: Ensure nexus is extracted
+    unarchive:
+      src:  /home/ubuntu/nexus-3.86.2-01-linux-x86_64.tar.gz
+      dest: /home/ubuntu
+      remote_src: yes
+
+
+  - name: Ensure ownership  is changed
+    file:
+      path: /home/ubuntu/nexus-3.86.2-01
+      owner: ubuntu
+      group: ubuntu
+      recurse: yes
+
+
+  - name: Start nexus
+    command: /home/ubuntu/nexus-3.86.2-01/bin/nexus start
