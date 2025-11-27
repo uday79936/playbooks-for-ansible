@@ -1,0 +1,26 @@
+---
+- name: Update all servers
+  hosts: all
+  become: yes
+  vars:
+    ports:
+      conf: 8070
+
+  handlers:
+    - name: restart apache2
+      service:
+        name: apache2
+        state: restarted
+
+  tasks:
+    - name: Ensure sample file is copied
+      template:
+        src: /home/ubuntu/ports.j2
+        dest: /etc/apache2/ports.conf
+      notify: restart apache2
+
+    - name: Ensure php is installed
+      package:
+        name: php
+        state: present
+      notify: restart apache2

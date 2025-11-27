@@ -1,0 +1,19 @@
+---
+- name: Update all servers
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Ensure server is updated
+      apt:
+        update_cache: yes
+
+    - name: Ensure apache2 is installed
+      package:
+        name: apache2
+        state : present
+
+    - name: Ensure sample file is copied
+      template:
+        src: /home/ubuntu/dynamic.j2
+        dest: /var/www/html/dynamic.html

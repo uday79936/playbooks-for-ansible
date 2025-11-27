@@ -1,0 +1,15 @@
+---
+- name: Update all servers
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Ensure sample file is copied
+      copy:
+        src: /home/ubuntu/ports.conf
+        dest: /etc/apache2/ports.conf
+
+    - name: Ensure apache2 is restarted
+      service:
+        name: apache2
+        state: restarted
