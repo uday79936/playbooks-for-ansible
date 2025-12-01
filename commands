@@ -1,0 +1,9 @@
+ansible-inventory -i /etc/ansible/aws_ec2.yml --list
+
+source myenv/bin/activate # for activation
+
+ ansible -i /etc/ansible/aws_ec2.yml all -m ping -u ubuntu --private-key ~/pro.pem
+
+ ansible-galaxy init role1  # for role creation
+
+ansible-playbook web-setup.yml -i /etc/ansible/aws_ec2.yml -u ubuntu --private-key ~/pro.pem
