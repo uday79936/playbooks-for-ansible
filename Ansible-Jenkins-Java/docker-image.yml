@@ -1,0 +1,104 @@
+
+---
+- name: Setup Docker, Build Image with Nexus Artifact, Push to Docker Hub
+  hosts: S3
+  become: yes
+
+  vars_files:
+    - docker.yml  # Vault file containing vault_dockerhub_password
+
+  vars:
+    docker_user: "{{ ansible_user }}"  # SSH user
+    nexus_artifact_url: "http://13.64.145.254:8081/repository/maven-releases/com/example/motivator-region/2.0/motivator-region-2.0.war"
+    nexus_username: "admin"
+    nexus_password: "admin"
+    image_name: "motivator-region-image"
+    dockerhub_username: "deiconx"
+    dockerhub_password: "{{ vault_dockerhub_password }}"  # Loaded from vault
+    dockerhub_repo: "deiconx/motivator-region-image"
+    dockerfile_path: "/home/{{ ansible_user }}/Dockerfile"
+
+  tasks:
+    # ✅ Update system
+    - name: Update apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    # ✅ Install Docker
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Install Docker Compose
+      apt:
+        name: docker-compose
+        state: present
+
+    # ✅ Modify Docker permissions
+    - name: Add user to docker group
+      user:
+        name: "{{ docker_user }}"
+        groups: docker
+        append: yes
+
+    - name: Restart Docker service
+      service:
+        name: docker
+        state: restarted
+
+    # ✅ Change Docker socket permissions
+    - name: Change Docker socket permissions
+      command: chmod 666 /var/run/docker.sock
+
+    # ✅ Pre-check Nexus artifact availability
+    - name: Check if Nexus artifact exists
+      uri:
+        url: "{{ nexus_artifact_url }}"
+        user: "{{ nexus_username }}"
+        password: "{{ nexus_password }}"
+        method: HEAD
+        status_code: 200
+      register: nexus_check
+      failed_when: nexus_check.status != 200
+
+    # ✅ Create Dockerfile (only downloads artifact)
+    - name: Create Dockerfile to download artifact from Nexus
+      copy:
+        dest: "{{ dockerfile_path }}"
+        content: |
+          FROM ubuntu:22.04
+          RUN apt-get update && apt-get install -y curl
+          WORKDIR /artifact
+          RUN curl -u {{ nexus_username }}:{{ nexus_password }} -O {{ nexus_artifact_url }}
+          CMD ["ls", "-lh", "/artifact"]
+
+    # ✅ Build Docker image
+    - name: Build Docker image
+      command: docker build -t {{ image_name }} -f {{ dockerfile_path }} /home/{{ ansible_user }}
+      become_user: "{{ ansible_user }}"
+
+    # ✅ Tag Docker image for Docker Hub
+    - name: Tag Docker image
+      command: docker tag {{ image_name }} {{ dockerhub_repo }}
+      become_user: "{{ ansible_user }}"
+
+    # ✅ Login to Docker Hub
+    - name: Docker Hub login
+      command: docker login -u {{ dockerhub_username }} -p {{ dockerhub_password }}
+      become_user: "{{ ansible_user }}"
+
+    # ✅ Push image to Docker Hub
+    - name: Push Docker image to Docker Hub
+      command: docker push {{ dockerhub_repo }}
+      become_user: "{{ ansible_user }}"
+
+    # ✅ Verify image pushed
+    - name: List Docker images
+      command: docker images
+      register: docker_images
+      changed_when: false
+
+    - debug:
+        msg: "Docker images: {{ docker_images.stdout }}"

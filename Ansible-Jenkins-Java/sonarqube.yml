@@ -1,0 +1,183 @@
+
+
+- name: Setup SonarQube Server and Analyze Code
+  hosts: S1
+  become: yes
+  vars:
+    java_version: "17"
+    sonarqube_version: "10.5.1.90531"
+    sonarqube_download_url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-{{ sonarqube_version }}.zip"
+    sonarqube_install_dir: "/opt/sonarqube"
+    sonarqube_user: "sonar"
+    sonar_scanner_version: "5.0.1.3006"
+    sonar_scanner_url: "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-{{ sonar_scanner_version }}-linux.zip"
+    sonar_token: "squ_0a3c061e225cff02ee34652c69bd80ca90f0720e"
+    sonar_host_url: "http://13.60.188.200:9000"
+    git_repo: "https://github.com/DEICONX/DOCKER-PROJECT-JAVA.git"
+    project_dir: "/opt/project"
+    sonar_temp_dir: "/tmp/sonar"
+
+  tasks:
+    - name: Update apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install Java 17
+      apt:
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Install Git
+      apt:
+        name: git
+        state: present
+
+    - name: Create SonarQube user
+      user:
+        name: "{{ sonarqube_user }}"
+        shell: /bin/bash
+        create_home: yes
+
+    - name: Download SonarQube
+      get_url:
+        url: "{{ sonarqube_download_url }}"
+        dest: "/tmp/sonarqube.zip"
+
+    - name: Create SonarQube installation directory
+      file:
+        path: "{{ sonarqube_install_dir }}"
+        state: directory
+        owner: "{{ sonarqube_user }}"
+        group: "{{ sonarqube_user }}"
+        mode: '0755'
+
+    - name: Unzip SonarQube
+      unarchive:
+        src: "/tmp/sonarqube.zip"
+        dest: "{{ sonarqube_install_dir }}"
+        remote_src: yes
+
+    - name: Change ownership of SonarQube directory
+      file:
+        path: "{{ sonarqube_install_dir }}"
+        owner: "{{ sonarqube_user }}"
+        group: "{{ sonarqube_user }}"
+        recurse: yes
+
+    - name: Create systemd service for SonarQube
+      copy:
+        dest: /etc/systemd/system/sonarqube.service
+        content: |
+          [Unit]
+          Description=SonarQube service
+          After=syslog.target network.target
+
+          [Service]
+          Type=forking
+          ExecStart={{ sonarqube_install_dir }}/sonarqube-{{ sonarqube_version }}/bin/linux-x86-64/sonar.sh start
+          ExecStop={{ sonarqube_install_dir }}/sonarqube-{{ sonarqube_version }}/bin/linux-x86-64/sonar.sh stop
+          User={{ sonarqube_user }}
+          Group={{ sonarqube_user }}
+          Restart=always
+          LimitNOFILE=65536
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd daemon
+      command: systemctl daemon-reload
+
+    - name: Enable and start SonarQube service
+      systemd:
+        name: sonarqube
+        enabled: yes
+        state: started
+
+    - name: Wait for SonarQube to be ready
+      uri:
+        url: "{{ sonar_host_url }}"
+        status_code: 200
+      register: result
+      retries: 10
+      delay: 15
+      until: result.status == 200
+
+    - name: Allow SonarQube port 9000 in firewall
+      ufw:
+        rule: allow
+        port: 9000
+        proto: tcp
+
+    - name: Download Sonar Scanner
+      get_url:
+        url: "{{ sonar_scanner_url }}"
+        dest: "/tmp/sonar-scanner.zip"
+
+    - name: Unzip Sonar Scanner
+      unarchive:
+        src: "/tmp/sonar-scanner.zip"
+        dest: "/opt/"
+        remote_src: yes
+
+    - name: Ensure project directory is writable
+      file:
+        path: "{{ project_dir }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Create Sonar Scanner temp directory
+      file:
+        path: "{{ sonar_temp_dir }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Remove existing project directory
+      file:
+        path: "{{ project_dir }}"
+        state: absent
+
+    - name: Clone GitHub repo
+      git:
+        repo: "{{ git_repo }}"
+        dest: "{{ project_dir }}"
+
+    # ✅ Dynamic detection of Java source folder
+    - name: Detect Java source directory dynamically
+      find:
+        paths: "{{ project_dir }}"
+        patterns: "*.java"
+        recurse: yes
+      register: java_files
+
+    - name: Fail if no Java files found
+      fail:
+        msg: "No Java files found in the project!"
+      when: java_files.matched == 0
+
+    - name: Set sonar.sources dynamically to parent folder
+      set_fact:
+        java_source_path: "{{ java_files.files[0].path | dirname }}"
+      when: java_files.matched > 0
+
+    - name: Create sonar-project.properties file
+      copy:
+        dest: "{{ project_dir }}/sonar-project.properties"
+        content: |
+          sonar.projectKey=DOCKER-PROJECT-JAVA
+          sonar.projectName=DOCKER-PROJECT-JAVA
+          sonar.projectVersion=1.0
+          sonar.sources={{ java_source_path }}
+          sonar.language=java
+          sonar.host.url={{ sonar_host_url }}
+          sonar.login={{ sonar_token }}
+          sonar.scanner.work.directory={{ sonar_temp_dir }}
+
+    - name: Run Sonar Scanner from project directory
+      command: /opt/sonar-scanner-{{ sonar_scanner_version }}-linux/bin/sonar-scanner
+      args:
+        chdir: "{{ project_dir }}"
