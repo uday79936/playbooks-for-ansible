@@ -7,3 +7,156 @@ source myenv/bin/activate # for activation
  ansible-galaxy init role1  # for role creation
 
 ansible-playbook web-setup.yml -i /etc/ansible/aws_ec2.yml -u ubuntu --private-key ~/pro.pem
+
+
+ 1  sudo hostnamectl set-hostname Ansible-Master
+    2  sudo init 6
+    3  ls
+    4  cd myenv/
+    5  ls
+    6  cd bin/
+    7  ls
+    8  cd
+    9  source myenv/bin/activate
+   10  ls
+   11  aws s3 ls
+   12  cd /etc/ansible/
+   13  ls
+   14  sudo touch aws_ec2.yml
+   15  ls
+   16  sudo vi aws_ec2.yml
+   17  source myenv/bin/activate
+   18  cd /etc/ansible/
+   19  ls
+   20  sudo vi aws_ec2.yml
+   21  cd
+   22  ansible-inventory -i /etc/ansible/aws_ec2.yml --list
+   23  ls
+   24  cd /etc/ansible/
+   25  ls
+   26  cat aws_ec2.yml
+   27  sudo vi aws_ec2.yml
+   28  ansible-inventory -i /etc/ansible/aws_ec2.yml --list
+   29  ls
+   30  ansible all -m ping -i /etc/ansible/aws_ec2.yml
+   31  ls
+   32  cd
+   33  ls
+   34  ll
+   35  chmod 400 pro.pem
+   36  ll
+   37  ansible -i /etc/ansible/aws_ec2.yml all -m ping \ -u ubuntu --private-key ~/pro.pem
+   38  ansible -i /etc/ansible/aws_ec2.yml all -m ping -u ubuntu --private-key ~/pro.pem
+   39  ansible-galaxy init role1
+   40  ld
+   41  ls
+   42  cd role1/
+   43  ls
+   44  ls handlers/
+   45  ls
+   46  cd tasks/
+   47  ls
+   48  sudo vi install.yml
+   49  sudo vi config.yml
+   50  cd ..
+   51  cd files/
+   52  ls
+   53  vi info.html
+   54  cd ..
+   55  cd handlers/
+   56  ls
+   57  vi main.yml
+   58  cd ..
+   59  cd tasks/
+   60  ls
+   61  vi config.yml
+   62  cd ..
+   63  sudo apt install tree
+   64  tree
+   65  cd tasks/
+   66  ls
+   67  vi main.yml
+   68  cd
+   69  vi web-setup.yml
+   70  history
+   71  ansible-playbook web-setup.yml -i /etc/ansible/aws_ec2.yml -u ubuntu --private-key ~/pro.pem
+   72  sudo mkdir -p /etc/ansible
+   73  cd /etc/ansible/
+   74  ls
+   75  sudo touch hosts
+   76  ls
+   77  cd
+   78  sudo apt update
+   79  sudo apt install python3.12-venv -y
+   80  python3 -m venv myenv
+   81  source myenv/bin/activate
+   82  pip install boto3 botocore
+   83  ansible-galaxy collection install amazon.aws
+   84  sudo apt install ansible-core
+   85  ansible-galaxy collection install amazon.aws
+   86  aws configure
+   87  sudo apt install unzip
+   88  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+   89  unzip awscliv2.zip
+   90  sudo ./aws/install
+   91  /usr/local/bin/aws --version
+   92  aws s3 ls
+   93  aws login
+   94  ls
+   95  history
+   96  ls
+   97  source myenv/bin/activate
+   98  ls
+   99  cd /etc/ansible/
+  100  ls
+  101  sudo vi aws_ec2.yml
+  102  cd /etc/ansible/
+  103  ls
+  104  cd
+  105  source myenv/bin/activate
+  106  ls
+  107  cd role1/
+  108  ls
+  109  cd files/
+  110  ls
+  111  cat info.html
+  112  cd ..
+  113  ls
+  114  cd handlers/
+  115  ks
+  116  ls
+  117  cat main.yml
+  118  cd ..
+  119  ls
+  120  cd t
+  121  cd tasks/
+  122  ls
+  123  cat main.yml
+  124  cat install.yml
+  125  ls
+  126  cat config.yml
+  127  cd ..
+  128  ls
+  129  cd t
+  130  cd templates/
+  131  ls
+  132  cd va
+  133  cd ..
+  134  cd vars/
+  135  ls
+  136  cat main.yml
+  137  ls
+  138  cd ..
+  139  ls
+  140  cd defaults/
+  141  ls
+  142  cat main.yml
+  143  cd ..
+  144  ls
+  145  cd ..
+  146  ls
+  147  cat web-setup.yml
+  148  cd ..
+  149  cd
+  150  ls
+  151  history
